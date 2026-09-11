@@ -1,1 +1,4 @@
-# CS4530Project_u1312724_u1415919_u1516621
+
+Roscoe: u1312724
+Chester: u1415919
+Zack: u1516621
