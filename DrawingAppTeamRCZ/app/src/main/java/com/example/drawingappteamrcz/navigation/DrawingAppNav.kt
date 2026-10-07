@@ -6,6 +6,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.drawingappteamrcz.DrawingViewModel
 import com.example.drawingappteamrcz.composables.DashboardView
+import com.example.drawingappteamrcz.composables.DrawingView
+import com.example.drawingappteamrcz.composables.SplashView
 
 @Composable
 fun DrawingAppNav(
@@ -14,6 +16,8 @@ fun DrawingAppNav(
 {
     NavHost(myNavController, startDestination) {
         composable("dashboard") { DashboardView(myVM) }
+        composable("drawing") { DrawingView() }
+        composable("splash") { SplashView() }
     }
 
 }
