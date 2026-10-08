@@ -1,7 +1,9 @@
 package com.example.drawingappteamrcz.composables
 
+import android.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,19 +20,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.room.util.copy
 
 @Composable
 fun DrawingView(onFinished: () -> Unit)
 {
     // Variables for Pen Settings
-    var PenSize by remember { mutableFloatStateOf(0f) }
+    var penSize by remember { mutableFloatStateOf(10f) }
     var showShapeMenu by remember { mutableStateOf(false) }
-    var selectedShape by remember { mutableStateOf(StrokeCap.Round) }
+    var selectedShape by remember { mutableStateOf(BrushType.LINE) }
+
+    // Variables for Canvas
+    var strokes by remember { mutableStateOf(listOf<Stroke>()) }
+    var currentStroke by remember { mutableStateOf(listOf< Offset>())}
 
     // Row 1 - Modifiers, Row 2 - Canvas
     Row(
@@ -45,8 +55,8 @@ fun DrawingView(onFinished: () -> Unit)
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             Slider(
-                value = PenSize,
-                onValueChange = { PenSize = it },
+                value = penSize,
+                onValueChange = { penSize = it },
                 valueRange = 0f..100f,
                 steps = 99,
                 modifier = Modifier.weight(1f)
@@ -59,7 +69,7 @@ fun DrawingView(onFinished: () -> Unit)
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             Button(onClick = { showShapeMenu = true }) {
-                Text(selectedShape)
+                Text("Line")
             }
 
             DropdownMenu(
@@ -67,13 +77,14 @@ fun DrawingView(onFinished: () -> Unit)
                 onDismissRequest = { showShapeMenu = false }
             ) {
                 listOf(
-                    "Round" to StrokeCap.Round,
-                    "Square" to StrokeCap.Square
-                ).forEach { (name, cap) ->
+                    "Line" to BrushType.LINE,
+                    "Circle" to BrushType.CIRCLE,
+                    "Rectangle" to BrushType.RECTANGLE
+                ).forEach { (name, type) ->
                     DropdownMenuItem(
                         text = { Text(name) },
                         onClick = {
-                            selectedShape = cap
+                            selectedShape = type
                             showShapeMenu = false
                         }
                     )
@@ -92,9 +103,57 @@ fun DrawingView(onFinished: () -> Unit)
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            currentStroke = listOf(offset)
+
+                            strokes = strokes + Stroke(
+                                points = currentStroke,
+                                width = penSize,
+                                type = selectedShape
+                            )
+                        },
+
+                        onDrag = { change, _ ->
+                            change.consume()
+
+                            currentStroke = currentStroke + change.position
+
+                            // Update the most recent stroke while preserving
+                            // its original width, color, and brush shape
+                            strokes = strokes.dropLast(1) + strokes.last().copy(
+                                points = currentStroke
+                            )
+                        },
+
+                        onDragEnd = {
+                            currentStroke = emptyList()
+                        }
+                    )
+                }
         )
         {
-
+            strokes.forEach { stroke ->
+                for (i in 0 until stroke.points.size - 1) {
+                    drawLine(
+                        color = Color.Red,
+                        start = stroke.points[i],
+                        end = stroke.points[i + 1],
+                        strokeWidth = stroke.width
+                    )
+                }
+            }
         }
     }
 }
+
+enum class BrushType {
+    LINE, CIRCLE, RECTANGLE
+}
+
+data class Stroke(
+    val points: List<Offset>,
+    val width: Float,
+    val type: BrushType
+)
