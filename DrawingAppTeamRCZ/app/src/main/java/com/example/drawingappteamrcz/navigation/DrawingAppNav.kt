@@ -8,16 +8,24 @@ import com.example.drawingappteamrcz.DrawingViewModel
 import com.example.drawingappteamrcz.composables.DashboardView
 import com.example.drawingappteamrcz.composables.DrawingView
 import com.example.drawingappteamrcz.composables.SplashView
+import androidx.compose.ui.Modifier
 
 @Composable
 fun DrawingAppNav(
-    myVM: DrawingViewModel, myNavController: NavHostController, startDestination: String
-)
+    myVM: DrawingViewModel, myNavController: NavHostController, startDestination: String,
+    modifier: Modifier = Modifier)
 {
-    NavHost(myNavController, startDestination) {
+    NavHost(myNavController, startDestination, modifier = modifier) {
         composable("dashboard") { DashboardView(myVM) }
         composable("drawing") { DrawingView() }
-        composable("splash") { SplashView() }
+        composable("splash") {
+            SplashView {
+                myNavController.navigate("dashboard") {
+                    popUpTo("splash") { inclusive = true }
+                }
+            }
+        }
     }
 
 }
+

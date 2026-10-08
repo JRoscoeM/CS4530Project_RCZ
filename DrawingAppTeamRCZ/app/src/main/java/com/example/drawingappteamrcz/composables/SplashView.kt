@@ -47,7 +47,7 @@ fun SplashView(onFinished: () -> Unit)
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Create something colorful",
+                text = "Draw stuff",
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
                 fontSize = 16.sp
             )
