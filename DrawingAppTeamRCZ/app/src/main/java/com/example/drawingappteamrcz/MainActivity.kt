@@ -27,7 +27,25 @@ class MainActivity : ComponentActivity()
                 val myVM: DrawingViewModel = viewModel()
                 val myNavController = rememberNavController()
                 DrawingAppNav(myVM, myNavController, "drawing")
+                DrawingApp(modifier = Modifier.fillMaxSize())
+            }
             }
         }
+    }
+
+@Composable
+fun DrawingApp(modifier: Modifier = Modifier) {
+    val navController = rememberNavController()
+    val drawingViewModel: DrawingViewModel = viewModel()
+
+    DrawingAppNav(drawingViewModel, navController, "splash", modifier)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DrawingAppPreview()
+{
+    DrawingAppTeamRCZTheme {
+        DrawingApp()
     }
 }
