@@ -9,6 +9,7 @@ import com.example.drawingappteamrcz.composables.DashboardView
 import com.example.drawingappteamrcz.composables.DrawingView
 import com.example.drawingappteamrcz.composables.SplashView
 import androidx.compose.ui.Modifier
+import com.example.drawingappteamrcz.composables.DrawingRoute
 
 @Composable
 fun DrawingAppNav(
@@ -17,7 +18,7 @@ fun DrawingAppNav(
 {
     NavHost(myNavController, startDestination, modifier = modifier) {
         composable("dashboard") { DashboardView(myVM) }
-        composable("drawing") { DrawingView() }
+        composable("drawing") { DrawingRoute(viewModel = myVM, onFinished = {}) }
         composable("splash") {
             SplashView {
                 myNavController.navigate("dashboard") {
