@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.drawingappteamrcz.DrawingViewModel
+import com.example.drawingappteamrcz.drawing.BrushColor
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
@@ -41,7 +42,10 @@ fun DrawingRoute(viewModel: DrawingViewModel, onFinished: () -> Unit = {}) {
         onPenSizeChanged = viewModel::setPenSize,
         onBrushMenuRequested = viewModel::openBrushMenu,
         onBrushMenuDismissed = viewModel::dismissBrushMenu,
+        onColorMenuRequested = viewModel::openColorMenu,
+        onColorMenuDismissed = viewModel::dismissColorMenu,
         onShapeSelected = viewModel::selectShape,
+        onColorSelected = viewModel::selectColor,
         onStrokeStarted = viewModel::startStroke,
         onStrokeExtended = viewModel::extendStroke,
         onStrokeFinished = viewModel::finishStroke,
@@ -55,7 +59,10 @@ fun DrawingView(
     onPenSizeChanged: (Float) -> Unit,
     onBrushMenuRequested: () -> Unit,
     onBrushMenuDismissed: () -> Unit,
+    onColorMenuRequested: () -> Unit,
+    onColorMenuDismissed: () -> Unit,
     onShapeSelected: (BrushType) -> Unit,
+    onColorSelected: (BrushColor) -> Unit,
     onStrokeStarted: (DrawingPoint) -> Unit,
     onStrokeExtended: (DrawingPoint) -> Unit,
     onStrokeFinished: () -> Unit,
@@ -100,6 +107,24 @@ fun DrawingView(
                     }
                 }
             }
+
+            Box {
+                Button(onClick = onColorMenuRequested) {
+                    Text(uiState.selectedColor.label)
+                }
+
+                DropdownMenu(
+                    expanded = uiState.showColorMenu,
+                    onDismissRequest = onColorMenuDismissed
+                ) {
+                    BrushColor.entries.forEach { color ->
+                        DropdownMenuItem(
+                            text = { Text(color.label) },
+                            onClick = { onColorSelected(color) }
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -125,12 +150,30 @@ fun DrawingView(
         ) {
             uiState.strokes.forEach { stroke ->
                 stroke.points.zipWithNext().forEach { (start, end) ->
-                    drawLine(
-                        color = Color.Red,
-                        start = Offset(start.x, start.y),
-                        end = Offset(end.x, end.y),
-                        strokeWidth = stroke.width
-                    )
+                    if(stroke.color == BrushColor.GREEN) {
+                        drawLine(
+                            color = Color.Green,
+                            start = Offset(start.x, start.y),
+                            end = Offset(end.x, end.y),
+                            strokeWidth = stroke.width
+                        )
+                    }
+                    if(stroke.color == BrushColor.RED) {
+                        drawLine(
+                            color = Color.Red,
+                            start = Offset(start.x, start.y),
+                            end = Offset(end.x, end.y),
+                            strokeWidth = stroke.width
+                        )
+                    }
+                    if(stroke.color == BrushColor.BLUE) {
+                        drawLine(
+                            color = Color.Blue,
+                            start = Offset(start.x, start.y),
+                            end = Offset(end.x, end.y),
+                            strokeWidth = stroke.width
+                        )
+                    }
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.example.drawingappteamrcz
 
 import androidx.lifecycle.ViewModel
+import com.example.drawingappteamrcz.drawing.BrushColor
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
@@ -28,11 +29,28 @@ class DrawingViewModel : ViewModel() {
         _uiState.update { it.copy(showShapeMenu = false) }
     }
 
+    fun openColorMenu() {
+        _uiState.update { it.copy(showColorMenu = true) }
+    }
+
+    fun dismissColorMenu() {
+        _uiState.update { it.copy(showColorMenu = false) }
+    }
+
     fun selectShape(shape: BrushType) {
         _uiState.update {
             it.copy(
                 selectedShape = shape,
                 showShapeMenu = false
+            )
+        }
+    }
+
+    fun selectColor(setColor: BrushColor){
+        _uiState.update{
+            it.copy(
+                selectedColor = setColor,
+                showColorMenu = false
             )
         }
     }
@@ -46,7 +64,8 @@ class DrawingViewModel : ViewModel() {
                 strokes = state.strokes + Stroke(
                     points = currentStroke,
                     width = state.penSize,
-                    type = state.selectedShape
+                    type = state.selectedShape,
+                    color = state.selectedColor
                 )
             )
         }
