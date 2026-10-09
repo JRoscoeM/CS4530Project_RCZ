@@ -1,13 +1,17 @@
 package com.example.drawingappteamrcz.composables
 
-import android.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -15,131 +19,116 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.room.util.copy
+import androidx.compose.ui.unit.dp
+import com.example.drawingappteamrcz.DrawingViewModel
+import com.example.drawingappteamrcz.drawing.BrushType
+import com.example.drawingappteamrcz.drawing.DrawingPoint
+import com.example.drawingappteamrcz.drawing.DrawingUiState
 
 @Composable
-fun DrawingView(onFinished: () -> Unit)
-{
-    // Variables for Pen Settings
-    var penSize by remember { mutableFloatStateOf(10f) }
-    var showShapeMenu by remember { mutableStateOf(false) }
-    var selectedShape by remember { mutableStateOf(BrushType.LINE) }
+fun DrawingRoute(viewModel: DrawingViewModel, onFinished: () -> Unit = {}) {
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Variables for Canvas
-    var strokes by remember { mutableStateOf(listOf<Stroke>()) }
-    var currentStroke by remember { mutableStateOf(listOf< Offset>())}
+    DrawingView(
+        uiState = uiState,
+        onPenSizeChanged = viewModel::setPenSize,
+        onBrushMenuRequested = viewModel::openBrushMenu,
+        onBrushMenuDismissed = viewModel::dismissBrushMenu,
+        onShapeSelected = viewModel::selectShape,
+        onStrokeStarted = viewModel::startStroke,
+        onStrokeExtended = viewModel::extendStroke,
+        onStrokeFinished = viewModel::finishStroke,
+        onFinished = onFinished
+    )
+}
 
-    // Row 1 - Modifiers, Row 2 - Canvas
-    Row(
+@Composable
+fun DrawingView(
+    uiState: DrawingUiState,
+    onPenSizeChanged: (Float) -> Unit,
+    onBrushMenuRequested: () -> Unit,
+    onBrushMenuDismissed: () -> Unit,
+    onShapeSelected: (BrushType) -> Unit,
+    onStrokeStarted: (DrawingPoint) -> Unit,
+    onStrokeExtended: (DrawingPoint) -> Unit,
+    onStrokeFinished: () -> Unit,
+    onFinished: () -> Unit
+) {
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(16.dp)
     ) {
-        // 3 Columns for each modifier in Row 1. 2 implimented so far
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primaryContainer),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            Slider(
-                value = penSize,
-                onValueChange = { penSize = it },
-                valueRange = 0f..100f,
-                steps = 99,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primaryContainer),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            Button(onClick = { showShapeMenu = true }) {
-                Text("Line")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Brush size: ${uiState.penSize.toInt()}")
+                Slider(
+                    value = uiState.penSize,
+                    onValueChange = onPenSizeChanged,
+                    valueRange = 0f..100f,
+                    steps = 99,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            DropdownMenu(
-                expanded = showShapeMenu,
-                onDismissRequest = { showShapeMenu = false }
-            ) {
-                listOf(
-                    "Line" to BrushType.LINE,
-                    "Circle" to BrushType.CIRCLE,
-                    "Rectangle" to BrushType.RECTANGLE
-                ).forEach { (name, type) ->
-                    DropdownMenuItem(
-                        text = { Text(name) },
-                        onClick = {
-                            selectedShape = type
-                            showShapeMenu = false
-                        }
-                    )
+            Box {
+                Button(onClick = onBrushMenuRequested) {
+                    Text(uiState.selectedShape.label)
+                }
+
+                DropdownMenu(
+                    expanded = uiState.showShapeMenu,
+                    onDismissRequest = onBrushMenuDismissed
+                ) {
+                    BrushType.entries.forEach { brush ->
+                        DropdownMenuItem(
+                            text = { Text(brush.label) },
+                            onClick = { onShapeSelected(brush) }
+                        )
+                    }
                 }
             }
         }
 
-    }
+        Spacer(modifier = Modifier.height(16.dp))
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primaryContainer)
-    ){
         Canvas(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .weight(1f)
                 .background(Color.White)
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            currentStroke = listOf(offset)
-
-                            strokes = strokes + Stroke(
-                                points = currentStroke,
-                                width = penSize,
-                                type = selectedShape
-                            )
+                            onStrokeStarted(offset.toDrawingPoint())
                         },
-
                         onDrag = { change, _ ->
                             change.consume()
-
-                            currentStroke = currentStroke + change.position
-
-                            // Update the most recent stroke while preserving
-                            // its original width, color, and brush shape
-                            strokes = strokes.dropLast(1) + strokes.last().copy(
-                                points = currentStroke
-                            )
+                            onStrokeExtended(change.position.toDrawingPoint())
                         },
-
-                        onDragEnd = {
-                            currentStroke = emptyList()
-                        }
+                        onDragEnd = onStrokeFinished,
+                        onDragCancel = onStrokeFinished
                     )
                 }
-        )
-        {
-            strokes.forEach { stroke ->
-                for (i in 0 until stroke.points.size - 1) {
+        ) {
+            uiState.strokes.forEach { stroke ->
+                stroke.points.zipWithNext().forEach { (start, end) ->
                     drawLine(
                         color = Color.Red,
-                        start = stroke.points[i],
-                        end = stroke.points[i + 1],
+                        start = Offset(start.x, start.y),
+                        end = Offset(end.x, end.y),
                         strokeWidth = stroke.width
                     )
                 }
@@ -148,12 +137,4 @@ fun DrawingView(onFinished: () -> Unit)
     }
 }
 
-enum class BrushType {
-    LINE, CIRCLE, RECTANGLE
-}
-
-data class Stroke(
-    val points: List<Offset>,
-    val width: Float,
-    val type: BrushType
-)
+private fun Offset.toDrawingPoint() = DrawingPoint(x = x, y = y)

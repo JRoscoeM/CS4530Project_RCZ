@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity()
             DrawingAppTeamRCZTheme {
                 val myVM: DrawingViewModel = viewModel()
                 val myNavController = rememberNavController()
-                DrawingAppNav(myVM, myNavController, "splash")
+                DrawingAppNav(myVM, myNavController, "drawing")
             }
         }
     }
