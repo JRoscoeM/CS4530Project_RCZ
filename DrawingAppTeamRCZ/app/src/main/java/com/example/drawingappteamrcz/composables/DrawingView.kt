@@ -24,14 +24,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.drawingappteamrcz.DrawingViewModel
-import com.example.drawingappteamrcz.drawing.BrushColor
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
+import kotlin.math.abs
+
+val all_colors = mapOf(
+    "Red" to Color.Red,
+    "Blue" to Color.Blue,
+    "Green" to Color.Green,
+    "Yellow" to Color.Yellow,
+    "Black" to Color.Black,
+    "White" to Color.White,
+    "Gray" to Color.Gray,
+    "Cyan" to Color.Cyan,
+    "Magenta" to Color.Magenta
+)
+
+var startPosition: DrawingPoint? = null
+var endPosition: DrawingPoint? = null
 
 @Composable
 fun DrawingRoute(viewModel: DrawingViewModel, onFinished: () -> Unit = {}) {
@@ -62,7 +80,7 @@ fun DrawingView(
     onColorMenuRequested: () -> Unit,
     onColorMenuDismissed: () -> Unit,
     onShapeSelected: (BrushType) -> Unit,
-    onColorSelected: (BrushColor) -> Unit,
+    onColorSelected: (Color) -> Unit,
     onStrokeStarted: (DrawingPoint) -> Unit,
     onStrokeExtended: (DrawingPoint) -> Unit,
     onStrokeFinished: () -> Unit,
@@ -110,16 +128,19 @@ fun DrawingView(
 
             Box {
                 Button(onClick = onColorMenuRequested) {
-                    Text(uiState.selectedColor.label)
+                    Text(
+                        all_colors.entries.find { it.value == uiState.selectedColor }?.key
+                            ?: "Select Color"
+                    )
                 }
 
                 DropdownMenu(
                     expanded = uiState.showColorMenu,
                     onDismissRequest = onColorMenuDismissed
                 ) {
-                    BrushColor.entries.forEach { color ->
+                    all_colors.forEach { (name, color) ->
                         DropdownMenuItem(
-                            text = { Text(color.label) },
+                            text = { Text(name) },
                             onClick = { onColorSelected(color) }
                         )
                     }
@@ -137,41 +158,61 @@ fun DrawingView(
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            onStrokeStarted(offset.toDrawingPoint())
+                            startPosition = offset.toDrawingPoint()
+                            endPosition = startPosition
                         },
                         onDrag = { change, _ ->
                             change.consume()
-                            onStrokeExtended(change.position.toDrawingPoint())
+                            endPosition = change.position.toDrawingPoint()
                         },
-                        onDragEnd = onStrokeFinished,
-                        onDragCancel = onStrokeFinished
+                        onDragEnd = {
+                            startPosition?.let { start ->
+                                endPosition?.let { end ->
+                                    onStrokeStarted(start)
+                                    onStrokeExtended(end)
+                                    onStrokeFinished()
+                                }
+                            }
+                            startPosition = null
+                            endPosition = null
+                        },
+                        onDragCancel = {
+                            startPosition = null
+                            endPosition = null
+                        }
                     )
                 }
         ) {
             uiState.strokes.forEach { stroke ->
                 stroke.points.zipWithNext().forEach { (start, end) ->
-                    if(stroke.color == BrushColor.GREEN) {
+                    if(stroke.type == BrushType.LINE) {
                         drawLine(
-                            color = Color.Green,
+                            color = stroke.color,
                             start = Offset(start.x, start.y),
                             end = Offset(end.x, end.y),
                             strokeWidth = stroke.width
                         )
                     }
-                    if(stroke.color == BrushColor.RED) {
-                        drawLine(
-                            color = Color.Red,
-                            start = Offset(start.x, start.y),
-                            end = Offset(end.x, end.y),
-                            strokeWidth = stroke.width
+                    if(stroke.type == BrushType.CIRCLE) {
+                        drawCircle(
+                            color = stroke.color,
+                            center = Offset(start.x, start.y),
+                            radius = Offset(end.x - start.x, end.y - start.y).getDistance(),
+                            style = Stroke(width = stroke.width)
                         )
                     }
-                    if(stroke.color == BrushColor.BLUE) {
-                        drawLine(
-                            color = Color.Blue,
-                            start = Offset(start.x, start.y),
-                            end = Offset(end.x, end.y),
-                            strokeWidth = stroke.width
+                    if(stroke.type == BrushType.RECTANGLE){
+                        drawRect(
+                            color = stroke.color,
+                            topLeft = Offset(
+                                minOf(start.x, end.x),
+                                minOf(start.y, end.y)
+                            ),
+                            size = Size(
+                                abs(end.x - start.x),
+                                abs(end.y - start.y)
+                            ),
+                            style = Stroke(width = stroke.width)
                         )
                     }
                 }

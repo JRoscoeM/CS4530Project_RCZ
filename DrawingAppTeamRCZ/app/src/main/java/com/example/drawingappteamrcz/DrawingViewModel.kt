@@ -1,7 +1,7 @@
 package com.example.drawingappteamrcz
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
-import com.example.drawingappteamrcz.drawing.BrushColor
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
@@ -46,7 +46,7 @@ class DrawingViewModel : ViewModel() {
         }
     }
 
-    fun selectColor(setColor: BrushColor){
+    fun selectColor(setColor: Color){
         _uiState.update{
             it.copy(
                 selectedColor = setColor,

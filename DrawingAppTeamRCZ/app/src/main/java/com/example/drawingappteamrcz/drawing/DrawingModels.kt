@@ -1,5 +1,7 @@
 package com.example.drawingappteamrcz.drawing
 
+import androidx.compose.ui.graphics.Color
+
 data class DrawingPoint(
     val x: Float,
     val y: Float
@@ -11,17 +13,11 @@ enum class BrushType(val label: String) {
     RECTANGLE("Rectangle")
 }
 
-enum class BrushColor(val label: String){
-    RED("Red"),
-    GREEN("Green"),
-    BLUE("Blue")
-}
-
 data class Stroke(
     val points: List<DrawingPoint>,
     val width: Float,
     val type: BrushType,
-    val color: BrushColor
+    val color: Color
 )
 
 data class DrawingUiState(
@@ -29,7 +25,7 @@ data class DrawingUiState(
     val showShapeMenu: Boolean = false,
     val showColorMenu: Boolean = false,
     val selectedShape: BrushType = BrushType.LINE,
-    val selectedColor: BrushColor = BrushColor.RED,
+    val selectedColor: Color = Color.Red,
     val strokes: List<Stroke> = emptyList(),
     val currentStroke: List<DrawingPoint> = emptyList()
 )
