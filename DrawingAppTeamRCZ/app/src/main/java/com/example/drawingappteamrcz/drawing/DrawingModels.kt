@@ -21,7 +21,12 @@ data class Stroke(
     val points: List<DrawingPoint>,
     val width: Float,
     val type: BrushType,
-    val color: BrushColor
+    val color: BrushColor = BrushColor.RED
+)
+
+data class SavedDrawing(
+    val id: Long,
+    val strokes: List<Stroke>
 )
 
 data class DrawingUiState(
@@ -31,5 +36,6 @@ data class DrawingUiState(
     val selectedShape: BrushType = BrushType.LINE,
     val selectedColor: BrushColor = BrushColor.RED,
     val strokes: List<Stroke> = emptyList(),
-    val currentStroke: List<DrawingPoint> = emptyList()
+    val currentStroke: List<DrawingPoint> = emptyList(),
+    val savedDrawings: List<SavedDrawing> = emptyList()
 )

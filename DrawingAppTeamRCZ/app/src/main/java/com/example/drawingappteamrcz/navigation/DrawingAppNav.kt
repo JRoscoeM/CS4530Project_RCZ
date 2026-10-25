@@ -17,8 +17,24 @@ fun DrawingAppNav(
     modifier: Modifier = Modifier)
 {
     NavHost(myNavController, startDestination, modifier = modifier) {
-        composable("dashboard") { DashboardView(myVM) }
-        composable("drawing") { DrawingRoute(viewModel = myVM, onFinished = {}) }
+        composable("dashboard") {
+            DashboardView(
+                myVM = myVM,
+                onNewDrawing = {
+                    myVM.startNewDrawing()
+                    myNavController.navigate("drawing")
+                }
+            )
+        }
+        composable("drawing") {
+            DrawingRoute(
+                viewModel = myVM,
+                onFinished = {
+                    myVM.saveDrawing()
+                    myNavController.popBackStack()
+                }
+            )
+        }
         composable("splash") {
             SplashView {
                 myNavController.navigate("dashboard") {

@@ -39,4 +39,18 @@ class DrawingViewModelTest {
             state.strokes.single().points
         )
     }
+
+    @Test
+    fun savingADrawingMakesItAvailableToTheDashboard() {
+        val viewModel = DrawingViewModel()
+        viewModel.startStroke(DrawingPoint(1f, 1f))
+        viewModel.extendStroke(DrawingPoint(4f, 6f))
+        viewModel.finishStroke()
+
+        viewModel.saveDrawing()
+
+        val savedDrawing = viewModel.uiState.value.savedDrawings.single()
+        assertEquals(1, savedDrawing.strokes.size)
+        assertEquals(emptyList<DrawingPoint>(), viewModel.uiState.value.currentStroke)
+    }
 }

@@ -5,6 +5,7 @@ import com.example.drawingappteamrcz.drawing.BrushColor
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
+import com.example.drawingappteamrcz.drawing.SavedDrawing
 import com.example.drawingappteamrcz.drawing.Stroke
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,8 +91,36 @@ class DrawingViewModel : ViewModel() {
         _uiState.update { it.copy(currentStroke = emptyList()) }
     }
 
+    fun startNewDrawing() {
+        _uiState.update {
+            it.copy(
+                strokes = emptyList(),
+                currentStroke = emptyList(),
+                showShapeMenu = false,
+                showColorMenu = false
+            )
+        }
+    }
+
+    fun saveDrawing() {
+        _uiState.update { state ->
+            if (state.strokes.isEmpty()) {
+                state
+            } else {
+                state.copy(
+                    savedDrawings = state.savedDrawings + SavedDrawing(
+                        id = nextDrawingId++,
+                        strokes = state.strokes
+                    ),
+                    currentStroke = emptyList()
+                )
+            }
+        }
+    }
+
     private companion object {
         const val MIN_PEN_SIZE = 0f
         const val MAX_PEN_SIZE = 100f
+        var nextDrawingId = 1L
     }
 }
