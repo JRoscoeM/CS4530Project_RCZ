@@ -14,11 +14,12 @@ import com.example.drawingappteamrcz.composables.DrawingRoute
 @Composable
 fun DrawingAppNav(
     myVM: DrawingViewModel, myNavController: NavHostController, startDestination: String,
-    modifier: Modifier = Modifier)
+    modifier: Modifier = Modifier
+)
 {
     NavHost(myNavController, startDestination, modifier = modifier) {
         composable("dashboard") { DashboardView(myVM) }
-        composable("drawing") { DrawingRoute(viewModel = myVM, onFinished = {}) }
+        composable("drawing") { DrawingRoute(viewModel = myVM, onFinished = {}, myNavController) }
         composable("splash") {
             SplashView {
                 myNavController.navigate("dashboard") {

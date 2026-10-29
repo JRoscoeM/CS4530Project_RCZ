@@ -20,7 +20,8 @@ class Repository(
         return dao.retrieveDrawing(name)
     }
 
-    suspend fun addDrawing(drawing: DrawingEntity)
+    //TODO Should this be suspend?
+    fun addDrawing(drawing: DrawingEntity)
     {
         scope.launch {
 //            val drawingObj = DrawingEntity(drawing.name, drawing.drawingData)

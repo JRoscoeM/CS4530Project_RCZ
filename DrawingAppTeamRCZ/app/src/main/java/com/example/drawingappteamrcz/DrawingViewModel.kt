@@ -2,6 +2,7 @@ package com.example.drawingappteamrcz
 
 import android.util.Log
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,10 +12,6 @@ import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
 import com.example.drawingappteamrcz.drawing.Stroke
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,8 +24,24 @@ import kotlinx.serialization.json.Json
 
 // TODO type of Drawing
 @Serializable
-data class Drawing(val name: String, val drawingData: String)
+data class StoredDrawing(
+    val name: String,
+    val strokes: List<StoredStroke>
+)
 
+@Serializable
+data class StoredPoint(
+    val x: Float,
+    val y: Float
+)
+
+@Serializable
+data class StoredStroke(
+    val points: List<StoredPoint>,
+    val width: Float,
+    val brushType: String,
+    val colorArgb: Int
+)
 //TODO this may be useful later
 //object APIClient {
 //    val client = HttpClient(Android) {
@@ -37,6 +50,42 @@ data class Drawing(val name: String, val drawingData: String)
 //        }
 //    }
 //}
+
+
+private val drawingJson = Json {
+    ignoreUnknownKeys = true
+}
+
+fun encodeDrawing(strokes: List<Stroke>): String
+{
+    val storedStrokes = strokes.map { stroke ->
+        StoredStroke(
+            points = stroke.points.map { point ->
+                StoredPoint(point.x, point.y)
+            },
+            width = stroke.width,
+            brushType = stroke.type.name,
+            colorArgb = stroke.color.toArgb()
+        )
+    }
+    return drawingJson.encodeToString(storedStrokes)
+}
+
+fun decodeDrawing(jsonData: String): List<Stroke>
+{
+    val decodedDrawing = drawingJson.decodeFromString<StoredDrawing>(jsonData)
+
+    return decodedDrawing.strokes.map { stroke ->
+        Stroke(
+            points = stroke.points.map { point ->
+                DrawingPoint(point.x, point.y)
+            },
+            width = stroke.width,
+            type = BrushType.valueOf(stroke.brushType),
+            color = Color(stroke.colorArgb)
+        )
+    }
+}
 
 object DrawingViewModelProvider
 {
@@ -70,6 +119,11 @@ class DrawingViewModel(repository: Repository) : ViewModel()
     fun getDrawings(): Flow<List<DrawingEntity>>
     {
         return drawingsReadOnly
+    }
+
+    fun addDrawing(name: String, data: String)
+    {
+        dao.addDrawing(DrawingEntity(name, data))
     }
 
     suspend fun getDrawing(name: String)

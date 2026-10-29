@@ -18,9 +18,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -30,10 +34,14 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.example.drawingappteamrcz.DrawingEntity
 import com.example.drawingappteamrcz.DrawingViewModel
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
+import com.example.drawingappteamrcz.encodeDrawing
 import kotlin.math.abs
 
 val all_colors = mapOf(
@@ -52,10 +60,13 @@ var startPosition: DrawingPoint? = null
 var endPosition: DrawingPoint? = null
 
 @Composable
-fun DrawingRoute(viewModel: DrawingViewModel, onFinished: () -> Unit = {}) {
+fun DrawingRoute(viewModel: DrawingViewModel, onFinished: () -> Unit = {}, myNav: NavHostController)
+{
     val uiState by viewModel.uiState.collectAsState()
 
     DrawingView(
+        vm = viewModel,
+        nav = myNav,
         uiState = uiState,
         onPenSizeChanged = viewModel::setPenSize,
         onBrushMenuRequested = viewModel::openBrushMenu,
@@ -73,6 +84,8 @@ fun DrawingRoute(viewModel: DrawingViewModel, onFinished: () -> Unit = {}) {
 
 @Composable
 fun DrawingView(
+    vm: DrawingViewModel,
+    nav: NavHostController,
     uiState: DrawingUiState,
     onPenSizeChanged: (Float) -> Unit,
     onBrushMenuRequested: () -> Unit,
@@ -85,7 +98,8 @@ fun DrawingView(
     onStrokeExtended: (DrawingPoint) -> Unit,
     onStrokeFinished: () -> Unit,
     onFinished: () -> Unit
-) {
+)
+{
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -107,6 +121,8 @@ fun DrawingView(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+
 
             Box {
                 Button(onClick = onBrushMenuRequested) {
@@ -144,6 +160,50 @@ fun DrawingView(
                             onClick = { onColorSelected(color) }
                         )
                     }
+                }
+            }
+        }
+        var textValue by remember { mutableStateOf("") }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Name this Drawing: ")
+            TextField(
+                value = textValue,
+                onValueChange = { textValue = it },
+                modifier = Modifier
+                    .weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Button(
+                onClick = {
+                    val drawing = DrawingEntity(
+                        name = textValue,
+                        drawingData = encodeDrawing(uiState.strokes),
+
+                        )
+                    vm.addDrawing(
+                        drawing.name,
+                        drawing.drawingData
+                    )
+
+                }
+            ) {
+                Text("Save")
+            }
+            Box {
+                Button(onClick = {
+                    nav.navigate("dashboard")
+                }) {
+                    Text(text = "Back to Home")
                 }
             }
         }
@@ -185,7 +245,8 @@ fun DrawingView(
         ) {
             uiState.strokes.forEach { stroke ->
                 stroke.points.zipWithNext().forEach { (start, end) ->
-                    if(stroke.type == BrushType.LINE) {
+                    if (stroke.type == BrushType.LINE)
+                    {
                         drawLine(
                             color = stroke.color,
                             start = Offset(start.x, start.y),
@@ -193,7 +254,8 @@ fun DrawingView(
                             strokeWidth = stroke.width
                         )
                     }
-                    if(stroke.type == BrushType.CIRCLE) {
+                    if (stroke.type == BrushType.CIRCLE)
+                    {
                         drawCircle(
                             color = stroke.color,
                             center = Offset(start.x, start.y),
@@ -201,7 +263,8 @@ fun DrawingView(
                             style = Stroke(width = stroke.width)
                         )
                     }
-                    if(stroke.type == BrushType.RECTANGLE){
+                    if (stroke.type == BrushType.RECTANGLE)
+                    {
                         drawRect(
                             color = stroke.color,
                             topLeft = Offset(

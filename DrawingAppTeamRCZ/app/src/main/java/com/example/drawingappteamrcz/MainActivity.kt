@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -24,17 +25,21 @@ class MainActivity : ComponentActivity()
         enableEdgeToEdge()
         setContent {
             DrawingAppTeamRCZTheme {
-                val myVM: DrawingViewModel = viewModel()
+                val myVM: DrawingViewModel by viewModels {
+                    DrawingViewModelProvider.Factory
+                }
                 val myNavController = rememberNavController()
+
                 DrawingAppNav(myVM, myNavController, "drawing")
                 DrawingApp(modifier = Modifier.fillMaxSize())
             }
-            }
         }
     }
+}
 
 @Composable
-fun DrawingApp(modifier: Modifier = Modifier) {
+fun DrawingApp(modifier: Modifier = Modifier)
+{
     val navController = rememberNavController()
     val drawingViewModel: DrawingViewModel = viewModel()
 
