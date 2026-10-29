@@ -33,7 +33,8 @@ fun DrawingAppNav(
                 onFinished = {
                     myVM.saveDrawing()
                     myNavController.popBackStack()
-                }
+                },
+                myNavController
             )
         }
         composable("splash") {

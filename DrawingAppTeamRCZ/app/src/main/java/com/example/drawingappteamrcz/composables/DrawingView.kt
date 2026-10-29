@@ -42,6 +42,7 @@ import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
 import com.example.drawingappteamrcz.encodeDrawing
+
 import kotlin.math.abs
 
 val all_colors = mapOf(

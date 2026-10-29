@@ -7,23 +7,25 @@ data class DrawingPoint(
     val y: Float
 )
 
-enum class BrushType(val label: String) {
+enum class BrushType(val label: String)
+{
     LINE("Line"),
     CIRCLE("Circle"),
     RECTANGLE("Rectangle")
 }
 
-enum class BrushColor(val label: String){
-    RED("Red"),
-    GREEN("Green"),
-    BLUE("Blue")
-}
+//enum class BrushColor(val label: String)
+//{
+//    RED("Red"),
+//    GREEN("Green"),
+//    BLUE("Blue")
+//}
 
 data class Stroke(
     val points: List<DrawingPoint>,
     val width: Float,
     val type: BrushType,
-    val color: BrushColor = BrushColor.RED
+    val color: Color = Color.Red
 )
 
 data class SavedDrawing(
@@ -36,7 +38,7 @@ data class DrawingUiState(
     val showShapeMenu: Boolean = false,
     val showColorMenu: Boolean = false,
     val selectedShape: BrushType = BrushType.LINE,
-    val selectedColor: BrushColor = BrushColor.RED,
+    val selectedColor: Color = Color.Red,
     val strokes: List<Stroke> = emptyList(),
     val currentStroke: List<DrawingPoint> = emptyList(),
     val savedDrawings: List<SavedDrawing> = emptyList()

@@ -147,23 +147,28 @@ class DrawingViewModel(repository: Repository) : ViewModel()
         }
     }
 
-    fun openBrushMenu() {
+    fun openBrushMenu()
+    {
         _uiState.update { it.copy(showShapeMenu = true) }
     }
 
-    fun dismissBrushMenu() {
+    fun dismissBrushMenu()
+    {
         _uiState.update { it.copy(showShapeMenu = false) }
     }
 
-    fun openColorMenu() {
+    fun openColorMenu()
+    {
         _uiState.update { it.copy(showColorMenu = true) }
     }
 
-    fun dismissColorMenu() {
+    fun dismissColorMenu()
+    {
         _uiState.update { it.copy(showColorMenu = false) }
     }
 
-    fun selectShape(shape: BrushType) {
+    fun selectShape(shape: BrushType)
+    {
         _uiState.update {
             it.copy(
                 selectedShape = shape,
@@ -172,8 +177,9 @@ class DrawingViewModel(repository: Repository) : ViewModel()
         }
     }
 
-    fun selectColor(setColor: BrushColor){
-        _uiState.update{
+    fun selectColor(setColor: Color)
+    {
+        _uiState.update {
             it.copy(
                 selectedColor = setColor,
                 showColorMenu = false
@@ -201,7 +207,8 @@ class DrawingViewModel(repository: Repository) : ViewModel()
     fun extendStroke(point: DrawingPoint)
     {
         _uiState.update { state ->
-            if (state.currentStroke.isEmpty() || state.strokes.isEmpty()) {
+            if (state.currentStroke.isEmpty() || state.strokes.isEmpty())
+            {
                 return@update state
             }
 
@@ -209,16 +216,19 @@ class DrawingViewModel(repository: Repository) : ViewModel()
 
             state.copy(
                 currentStroke = currentStroke,
-                strokes = state.strokes.dropLast(1) + state.strokes.last().copy(points = currentStroke)
+                strokes = state.strokes.dropLast(1) + state.strokes.last()
+                    .copy(points = currentStroke)
             )
         }
     }
 
-    fun finishStroke() {
+    fun finishStroke()
+    {
         _uiState.update { it.copy(currentStroke = emptyList()) }
     }
 
-    fun startNewDrawing() {
+    fun startNewDrawing()
+    {
         _uiState.update {
             it.copy(
                 strokes = emptyList(),
@@ -229,11 +239,14 @@ class DrawingViewModel(repository: Repository) : ViewModel()
         }
     }
 
-    fun saveDrawing() {
+    fun saveDrawing()
+    {
         _uiState.update { state ->
-            if (state.strokes.isEmpty()) {
+            if (state.strokes.isEmpty())
+            {
                 state
-            } else {
+            } else
+            {
                 state.copy(
                     savedDrawings = state.savedDrawings + SavedDrawing(
                         id = nextDrawingId++,
@@ -245,7 +258,8 @@ class DrawingViewModel(repository: Repository) : ViewModel()
         }
     }
 
-    private companion object {
+    private companion object
+    {
         const val MIN_PEN_SIZE = 0f
         const val MAX_PEN_SIZE = 100f
         var nextDrawingId = 1L
