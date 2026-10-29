@@ -33,13 +33,12 @@ class MainActivity : ComponentActivity()
                 DrawingAppNav(myVM, myNavController, "drawing")
                 DrawingApp(modifier = Modifier.fillMaxSize())
             }
+            }
         }
     }
-}
 
 @Composable
-fun DrawingApp(modifier: Modifier = Modifier)
-{
+fun DrawingApp(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val drawingViewModel: DrawingViewModel = viewModel()
 
