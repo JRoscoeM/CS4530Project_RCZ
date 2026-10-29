@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -259,36 +260,42 @@ fun DrawingView(
                 stroke.points.zipWithNext().forEach { (start, end) ->
                     if (stroke.type == BrushType.LINE)
                     {
-                        drawLine(
-                            color = stroke.color,
-                            start = Offset(start.x, start.y),
-                            end = Offset(end.x, end.y),
-                            strokeWidth = stroke.width
-                        )
+                        clipRect {
+                            drawLine(
+                                color = stroke.color,
+                                start = Offset(start.x, start.y),
+                                end = Offset(end.x, end.y),
+                                strokeWidth = stroke.width
+                            )
+                        }
                     }
                     if (stroke.type == BrushType.CIRCLE)
                     {
-                        drawCircle(
-                            color = stroke.color,
-                            center = Offset(start.x, start.y),
-                            radius = Offset(end.x - start.x, end.y - start.y).getDistance(),
-                            style = Stroke(width = stroke.width)
-                        )
+                        clipRect {
+                            drawCircle(
+                                color = stroke.color,
+                                center = Offset(start.x, start.y),
+                                radius = Offset(end.x - start.x, end.y - start.y).getDistance(),
+                                style = Stroke(width = stroke.width)
+                            )
+                        }
                     }
                     if (stroke.type == BrushType.RECTANGLE)
                     {
-                        drawRect(
-                            color = stroke.color,
-                            topLeft = Offset(
-                                minOf(start.x, end.x),
-                                minOf(start.y, end.y)
-                            ),
-                            size = Size(
-                                abs(end.x - start.x),
-                                abs(end.y - start.y)
-                            ),
-                            style = Stroke(width = stroke.width)
-                        )
+                        clipRect {
+                            drawRect(
+                                color = stroke.color,
+                                topLeft = Offset(
+                                    minOf(start.x, end.x),
+                                    minOf(start.y, end.y)
+                                ),
+                                size = Size(
+                                    abs(end.x - start.x),
+                                    abs(end.y - start.y)
+                                ),
+                                style = Stroke(width = stroke.width)
+                            )
+                        }
                     }
                 }
             }
