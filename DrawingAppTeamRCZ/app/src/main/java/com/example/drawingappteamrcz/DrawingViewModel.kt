@@ -271,6 +271,34 @@ class DrawingViewModel(
             }
         }
     }
+
+    fun loadDrawing(drawing: DrawingEntity) {
+        try {
+            val storedStrokes =
+                drawingJson.decodeFromString<List<StoredStroke>>(drawing.drawingData)
+
+            val loadedStrokes = storedStrokes.map { stroke ->
+                Stroke(
+                    points = stroke.points.map { point ->
+                        DrawingPoint(point.x, point.y)
+                    },
+                    width = stroke.width,
+                    type = BrushType.valueOf(stroke.brushType),
+                    color = Color(stroke.colorArgb)
+                )
+            }
+
+            _uiState.update { state ->
+                state.copy(
+                    strokes = loadedStrokes,
+                    currentStroke = emptyList()
+                )
+            }
+        } catch (exception: Exception) {
+            Log.e("DrawingLoad", "Unable to load drawing", exception)
+        }
+    }
+
     // TODO: Function to impliment
     fun importDrawing(uri: Uri)
     {
