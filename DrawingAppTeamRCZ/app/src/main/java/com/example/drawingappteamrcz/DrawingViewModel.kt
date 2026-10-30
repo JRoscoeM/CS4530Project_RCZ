@@ -17,7 +17,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
-import com.example.drawingappteamrcz.drawing.SavedDrawing
 import com.example.drawingappteamrcz.drawing.Stroke
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -253,25 +252,6 @@ class DrawingViewModel(
         }
     }
 
-    fun saveDrawing()
-    {
-        _uiState.update { state ->
-            if (state.strokes.isEmpty())
-            {
-                state
-            } else
-            {
-                state.copy(
-                    savedDrawings = state.savedDrawings + SavedDrawing(
-                        id = nextDrawingId++,
-                        strokes = state.strokes
-                    ),
-                    currentStroke = emptyList()
-                )
-            }
-        }
-    }
-
     fun loadDrawing(drawing: DrawingEntity) {
         try {
             val storedStrokes =
@@ -392,7 +372,6 @@ class DrawingViewModel(
         const val MAX_PEN_SIZE = 100f
         const val EXPORT_TAG = "DrawingExport"
         const val IMPORT_TAG = "DrawingImport"
-        var nextDrawingId = 1L
     }
 }
 

@@ -29,11 +29,6 @@ data class Stroke(
     val color: Color = Color.Red
 )
 
-data class SavedDrawing(
-    val id: Long,
-    val strokes: List<Stroke>
-)
-
 data class DrawingUiState(
     val penSize: Float = 10f,
     val showShapeMenu: Boolean = false,
@@ -41,6 +36,5 @@ data class DrawingUiState(
     val selectedShape: BrushType = BrushType.DRAW,
     val selectedColor: Color = Color.Red,
     val strokes: List<Stroke> = emptyList(),
-    val currentStroke: List<DrawingPoint> = emptyList(),
-    val savedDrawings: List<SavedDrawing> = emptyList()
+    val currentStroke: List<DrawingPoint> = emptyList()
 )

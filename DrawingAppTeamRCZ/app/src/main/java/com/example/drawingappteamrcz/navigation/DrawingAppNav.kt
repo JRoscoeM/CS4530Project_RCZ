@@ -6,7 +6,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.drawingappteamrcz.DrawingViewModel
 import com.example.drawingappteamrcz.composables.DashboardView
-import com.example.drawingappteamrcz.composables.DrawingView
 import com.example.drawingappteamrcz.composables.SplashView
 import androidx.compose.ui.Modifier
 import com.example.drawingappteamrcz.composables.DrawingRoute
@@ -35,7 +34,6 @@ fun DrawingAppNav(
             DrawingRoute(
                 viewModel = myVM,
                 onFinished = {
-                    myVM.saveDrawing()
                     myNavController.popBackStack()
                 },
                 myNavController
