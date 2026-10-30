@@ -24,6 +24,10 @@ fun DrawingAppNav(
                 onNewDrawing = {
                     myVM.startNewDrawing()
                     myNavController.navigate("drawing")
+                },
+                onOpenDrawing = { drawing ->
+                    myVM.loadDrawing(drawing)
+                    myNavController.navigate("drawing")
                 }
             )
         }
