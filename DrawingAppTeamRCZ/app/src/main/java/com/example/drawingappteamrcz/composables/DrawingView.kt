@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.drawingappteamrcz.DrawingEntity
@@ -103,6 +105,12 @@ fun DrawingView(
     onFinished: () -> Unit
 )
 {
+    val importDrawingLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let(vm::importDrawing)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -209,8 +217,15 @@ fun DrawingView(
                 Button(onClick = {
                     nav.navigate("dashboard")
                 }) {
-                    Text(text = "Back to Home")
+                    Text(text = "Home")
                 }
+            }
+            Button(
+                onClick = {
+                    importDrawingLauncher.launch(arrayOf("application/json"))
+                }
+            ) {
+                Text("Import")
             }
             Button(
                 onClick = {

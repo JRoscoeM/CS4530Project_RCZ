@@ -2,6 +2,7 @@ package com.example.drawingappteamrcz
 
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -29,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.IOException
 
 // TODO type of Drawing
 @Serializable
@@ -270,6 +272,35 @@ class DrawingViewModel(
         }
     }
     // TODO: Function to impliment
+    fun importDrawing(uri: Uri)
+    {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val importedDrawing = contentResolver.openInputStream(uri)
+                    ?.bufferedReader()
+                    ?.use { reader -> drawingJson.decodeFromString<StoredDrawing>(reader.readText()) }
+                    ?: throw IOException("Unable to open imported drawing")
+                val importedStrokes = importedDrawing.strokes.map { stroke ->
+                    Stroke(
+                        points = stroke.points.map { point -> DrawingPoint(point.x, point.y) },
+                        width = stroke.width,
+                        type = BrushType.valueOf(stroke.brushType),
+                        color = Color(stroke.colorArgb)
+                    )
+                }
+
+                _uiState.update { state ->
+                    state.copy(
+                        strokes = importedStrokes,
+                        currentStroke = emptyList()
+                    )
+                }
+                Log.i(IMPORT_TAG, "Drawing imported from $uri")
+            } catch (exception: Exception) {
+                Log.e(IMPORT_TAG, "Unable to import drawing", exception)
+            }
+        }
+    }
     fun exportDrawing(name: String, strokes: List<Stroke>)
     {
         viewModelScope.launch(Dispatchers.IO) {
@@ -332,6 +363,7 @@ class DrawingViewModel(
         const val MIN_PEN_SIZE = 0f
         const val MAX_PEN_SIZE = 100f
         const val EXPORT_TAG = "DrawingExport"
+        const val IMPORT_TAG = "DrawingImport"
         var nextDrawingId = 1L
     }
 }
