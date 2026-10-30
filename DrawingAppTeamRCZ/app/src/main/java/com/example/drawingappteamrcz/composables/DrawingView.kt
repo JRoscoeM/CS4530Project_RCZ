@@ -212,6 +212,13 @@ fun DrawingView(
                     Text(text = "Back to Home")
                 }
             }
+            Button(
+                onClick = {
+                    vm.exportDrawing(textValue, uiState.strokes)
+                }
+            ) {
+                Text("Export")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
