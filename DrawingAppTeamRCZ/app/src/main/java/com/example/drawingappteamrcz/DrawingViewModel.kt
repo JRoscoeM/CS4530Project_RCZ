@@ -1,5 +1,11 @@
 package com.example.drawingappteamrcz
 
+import android.content.ContentResolver
+import android.content.ContentValues
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -20,8 +26,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.IOException
 
 // TODO type of Drawing
 @Serializable
@@ -92,15 +101,20 @@ object DrawingViewModelProvider
 {
     val Factory = viewModelFactory {
         initializer {
+            val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
+                    as DrawingApplication
             DrawingViewModel(
-                (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
-                        as DrawingApplication).repository
+                repository = application.repository,
+                contentResolver = application.contentResolver
             )
         }
     }
 }
 
-class DrawingViewModel(repository: Repository) : ViewModel()
+class DrawingViewModel(
+    repository: Repository,
+    private val contentResolver: ContentResolver
+) : ViewModel()
 {
 
     //    private val client = APIClient.client
@@ -257,11 +271,106 @@ class DrawingViewModel(repository: Repository) : ViewModel()
             }
         }
     }
+    // TODO: Function to impliment
+    fun importDrawing(uri: Uri)
+    {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val importedDrawing = contentResolver.openInputStream(uri)
+                    ?.bufferedReader()
+                    ?.use { reader -> drawingJson.decodeFromString<StoredDrawing>(reader.readText()) }
+                    ?: throw IOException("Unable to open imported drawing")
+                val importedStrokes = importedDrawing.strokes.map { stroke ->
+                    Stroke(
+                        points = stroke.points.map { point -> DrawingPoint(point.x, point.y) },
+                        width = stroke.width,
+                        type = BrushType.valueOf(stroke.brushType),
+                        color = Color(stroke.colorArgb)
+                    )
+                }
+
+                _uiState.update { state ->
+                    state.copy(
+                        strokes = importedStrokes,
+                        currentStroke = emptyList()
+                    )
+                }
+                Log.i(IMPORT_TAG, "Drawing imported from $uri")
+            } catch (exception: Exception) {
+                Log.e(IMPORT_TAG, "Unable to import drawing", exception)
+            }
+        }
+    }
+    fun exportDrawing(name: String, strokes: List<Stroke>)
+    {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                Log.w(EXPORT_TAG, "Export requires Android 10 or later")
+                return@launch
+            }
+
+            val exportJson = drawingJson.encodeToString(
+                StoredDrawing(
+                    name = name,
+                    strokes = strokes.map { stroke ->
+                        StoredStroke(
+                            points = stroke.points.map { point -> StoredPoint(point.x, point.y) },
+                            width = stroke.width,
+                            brushType = stroke.type.name,
+                            colorArgb = stroke.color.toArgb()
+                        )
+                    }
+                )
+            )
+            val fileName = "${name.toExportFileName()}.json"
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
+                put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_DOWNLOADS}/DrawingApp"
+                )
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+
+            val exportUri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            if (exportUri == null) {
+                Log.e(EXPORT_TAG, "Unable to create MediaStore entry for $fileName")
+                return@launch
+            }
+
+            try {
+                contentResolver.openOutputStream(exportUri, "w")?.bufferedWriter().use { writer ->
+                    checkNotNull(writer) { "Unable to open MediaStore output stream" }
+                    writer.write(exportJson)
+                }
+                contentResolver.update(
+                    exportUri,
+                    ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) },
+                    null,
+                    null
+                )
+                Log.i(EXPORT_TAG, "Drawing exported to $exportUri")
+            } catch (exception: Exception) {
+                contentResolver.delete(exportUri, null, null)
+                Log.e(EXPORT_TAG, "Unable to export drawing", exception)
+            }
+        }
+    }
 
     private companion object
     {
         const val MIN_PEN_SIZE = 0f
         const val MAX_PEN_SIZE = 100f
+        const val EXPORT_TAG = "DrawingExport"
+        const val IMPORT_TAG = "DrawingImport"
         var nextDrawingId = 1L
     }
+}
+
+private fun String.toExportFileName(): String
+{
+    return trim()
+        .ifBlank { "drawing" }
+        .replace(Regex("[\\\\/:*?\"<>|]"), "_")
 }

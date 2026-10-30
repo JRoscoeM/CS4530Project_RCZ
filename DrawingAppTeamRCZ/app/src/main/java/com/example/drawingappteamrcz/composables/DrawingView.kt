@@ -30,11 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.drawingappteamrcz.DrawingEntity
@@ -102,20 +105,18 @@ fun DrawingView(
     onFinished: () -> Unit
 )
 {
+    val importDrawingLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let(vm::importDrawing)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Button(onClick = onFinished) {
-                Text("Save")
-            }
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -216,8 +217,22 @@ fun DrawingView(
                 Button(onClick = {
                     nav.navigate("dashboard")
                 }) {
-                    Text(text = "Back to Home")
+                    Text(text = "Home")
                 }
+            }
+            Button(
+                onClick = {
+                    importDrawingLauncher.launch(arrayOf("application/json"))
+                }
+            ) {
+                Text("Import")
+            }
+            Button(
+                onClick = {
+                    vm.exportDrawing(textValue, uiState.strokes)
+                }
+            ) {
+                Text("Export")
             }
         }
 
@@ -228,28 +243,41 @@ fun DrawingView(
                 .fillMaxWidth()
                 .weight(1f)
                 .background(Color.White)
-                .pointerInput(Unit) {
+                .pointerInput(uiState.selectedShape) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             startPosition = offset.toDrawingPoint()
                             endPosition = startPosition
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeStarted(startPosition!!)
+                            }
                         },
                         onDrag = { change, _ ->
                             change.consume()
                             endPosition = change.position.toDrawingPoint()
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeExtended(endPosition!!)
+                            }
                         },
                         onDragEnd = {
-                            startPosition?.let { start ->
-                                endPosition?.let { end ->
-                                    onStrokeStarted(start)
-                                    onStrokeExtended(end)
-                                    onStrokeFinished()
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeFinished()
+                            } else {
+                                startPosition?.let { start ->
+                                    endPosition?.let { end ->
+                                        onStrokeStarted(start)
+                                        onStrokeExtended(end)
+                                        onStrokeFinished()
+                                    }
                                 }
                             }
                             startPosition = null
                             endPosition = null
                         },
                         onDragCancel = {
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeFinished()
+                            }
                             startPosition = null
                             endPosition = null
                         }
@@ -258,14 +286,15 @@ fun DrawingView(
         ) {
             uiState.strokes.forEach { stroke ->
                 stroke.points.zipWithNext().forEach { (start, end) ->
-                    if (stroke.type == BrushType.LINE)
+                    if (stroke.type == BrushType.LINE || stroke.type == BrushType.DRAW)
                     {
                         clipRect {
                             drawLine(
                                 color = stroke.color,
                                 start = Offset(start.x, start.y),
                                 end = Offset(end.x, end.y),
-                                strokeWidth = stroke.width
+                                strokeWidth = stroke.width,
+                                cap = StrokeCap.Round
                             )
                         }
                     }
