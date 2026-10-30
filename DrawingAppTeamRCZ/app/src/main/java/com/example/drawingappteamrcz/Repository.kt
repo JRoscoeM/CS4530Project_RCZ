@@ -2,7 +2,9 @@ package com.example.drawingappteamrcz
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+
 class Repository(
+    val scope: CoroutineScope,
     private val dao: DrawingInterface
 )
 {
