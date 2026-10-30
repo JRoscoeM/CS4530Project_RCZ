@@ -30,6 +30,7 @@ data class Stroke(
 )
 
 data class DrawingUiState(
+    val drawingName: String = "",
     val penSize: Float = 10f,
     val showShapeMenu: Boolean = false,
     val showColorMenu: Boolean = false,

@@ -22,25 +22,19 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.drawingappteamrcz.DrawingEntity
 import com.example.drawingappteamrcz.DrawingViewModel
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
@@ -177,7 +171,6 @@ fun DrawingView(
                 }
             }
         }
-        var textValue by remember { mutableStateOf("") }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -185,10 +178,9 @@ fun DrawingView(
         ) {
             Text("Name this Drawing: ")
             TextField(
-                value = textValue,
-                onValueChange = { textValue = it },
-                modifier = Modifier
-                    .weight(1f)
+                value = uiState.drawingName,
+                onValueChange = vm::setDrawingName,
+                modifier = Modifier.weight(1f)
             )
         }
         Row(
@@ -196,21 +188,7 @@ fun DrawingView(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            Button(
-                onClick = {
-                    val drawing = DrawingEntity(
-                        name = textValue,
-                        drawingData = encodeDrawing(uiState.strokes),
-
-                        )
-                    vm.addDrawing(
-                        drawing.name,
-                        drawing.drawingData
-                    )
-
-                }
-            ) {
+            Button(onClick = vm::saveDrawing) {
                 Text("Save")
             }
             Box {
@@ -229,7 +207,7 @@ fun DrawingView(
             }
             Button(
                 onClick = {
-                    vm.exportDrawing(textValue, uiState.strokes)
+                    vm.exportDrawing(uiState.drawingName, uiState.strokes)
                 }
             ) {
                 Text("Export")

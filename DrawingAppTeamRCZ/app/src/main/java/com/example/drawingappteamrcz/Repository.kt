@@ -2,10 +2,7 @@ package com.example.drawingappteamrcz
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
-
 class Repository(
-    val scope: CoroutineScope,
     private val dao: DrawingInterface
 )
 {
@@ -20,14 +17,12 @@ class Repository(
         return dao.retrieveDrawing(name)
     }
 
-    //TODO Should this be suspend?
-    fun addDrawing(drawing: DrawingEntity)
-    {
-        scope.launch {
-//            val drawingObj = DrawingEntity(drawing.name, drawing.drawingData)
-            // TDOO: The commented line seems redundant, is it?
-            dao.insertDrawing(drawing)
-        }
+    suspend fun addDrawing(drawing: DrawingEntity): Long {
+        return dao.insertDrawing(drawing)
+    }
+
+    suspend fun updateDrawing(drawing: DrawingEntity) {
+        dao.updateDrawing(drawing)
     }
 
 }

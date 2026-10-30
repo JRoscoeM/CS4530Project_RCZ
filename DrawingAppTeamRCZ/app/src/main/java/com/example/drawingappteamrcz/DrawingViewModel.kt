@@ -118,9 +118,11 @@ class DrawingViewModel(
 
     //    private val client = APIClient.client
     private val dao = repository
+    private var editingDrawingId: Int? = null
 
     // TODO is the above line redundant?
     private val _uiState = MutableStateFlow(DrawingUiState())
+
     val uiState: StateFlow<DrawingUiState> = _uiState.asStateFlow()
     val drawingsReadOnly: Flow<List<DrawingEntity>> = dao.getAllDrawings().stateIn(
         viewModelScope,
@@ -135,21 +137,6 @@ class DrawingViewModel(
         return drawingsReadOnly
     }
 
-    fun addDrawing(name: String, data: String)
-    {
-        dao.addDrawing(DrawingEntity(name, data))
-    }
-
-    suspend fun getDrawing(name: String)
-    {
-        try
-        {
-            dao.getDrawing(name)
-        } catch (e: Exception)
-        {
-            Log.e("In Drawing VM", "Error getting drawing", e)
-        }
-    }
     //TODO: purpose is different than A4, maybe no try/catch is needed.
 
     // ----------- End Data Functions ------------
@@ -242,8 +229,10 @@ class DrawingViewModel(
 
     fun startNewDrawing()
     {
+        editingDrawingId = null
         _uiState.update {
             it.copy(
+                drawingName = "",
                 strokes = emptyList(),
                 currentStroke = emptyList(),
                 showShapeMenu = false,
@@ -270,16 +259,39 @@ class DrawingViewModel(
 
             _uiState.update { state ->
                 state.copy(
+                    drawingName = drawing.name,
                     strokes = loadedStrokes,
                     currentStroke = emptyList()
                 )
             }
+            editingDrawingId = drawing.id
         } catch (exception: Exception) {
             Log.e("DrawingLoad", "Unable to load drawing", exception)
         }
     }
 
-    // TODO: Function to impliment
+    fun setDrawingName(name: String) {
+        _uiState.update { it.copy(drawingName = name) }
+    }
+
+    fun saveDrawing() {
+        val state = _uiState.value
+        val drawing = DrawingEntity(
+            name = state.drawingName,
+            drawingData = encodeDrawing(state.strokes),
+            id = editingDrawingId ?: 0
+        )
+
+        viewModelScope.launch {
+            if (editingDrawingId == null) {
+                editingDrawingId = dao.addDrawing(drawing).toInt()
+            } else {
+                dao.updateDrawing(drawing)
+            }
+        }
+    }
+
+    // TODO: Function to implement
     fun importDrawing(uri: Uri)
     {
         viewModelScope.launch(Dispatchers.IO) {
