@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -108,14 +109,6 @@ fun DrawingView(
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Button(onClick = onFinished) {
-                Text("Save")
-            }
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -228,28 +221,41 @@ fun DrawingView(
                 .fillMaxWidth()
                 .weight(1f)
                 .background(Color.White)
-                .pointerInput(Unit) {
+                .pointerInput(uiState.selectedShape) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             startPosition = offset.toDrawingPoint()
                             endPosition = startPosition
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeStarted(startPosition!!)
+                            }
                         },
                         onDrag = { change, _ ->
                             change.consume()
                             endPosition = change.position.toDrawingPoint()
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeExtended(endPosition!!)
+                            }
                         },
                         onDragEnd = {
-                            startPosition?.let { start ->
-                                endPosition?.let { end ->
-                                    onStrokeStarted(start)
-                                    onStrokeExtended(end)
-                                    onStrokeFinished()
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeFinished()
+                            } else {
+                                startPosition?.let { start ->
+                                    endPosition?.let { end ->
+                                        onStrokeStarted(start)
+                                        onStrokeExtended(end)
+                                        onStrokeFinished()
+                                    }
                                 }
                             }
                             startPosition = null
                             endPosition = null
                         },
                         onDragCancel = {
+                            if (uiState.selectedShape == BrushType.DRAW) {
+                                onStrokeFinished()
+                            }
                             startPosition = null
                             endPosition = null
                         }
@@ -258,14 +264,15 @@ fun DrawingView(
         ) {
             uiState.strokes.forEach { stroke ->
                 stroke.points.zipWithNext().forEach { (start, end) ->
-                    if (stroke.type == BrushType.LINE)
+                    if (stroke.type == BrushType.LINE || stroke.type == BrushType.DRAW)
                     {
                         clipRect {
                             drawLine(
                                 color = stroke.color,
                                 start = Offset(start.x, start.y),
                                 end = Offset(end.x, end.y),
-                                strokeWidth = stroke.width
+                                strokeWidth = stroke.width,
+                                cap = StrokeCap.Round
                             )
                         }
                     }
