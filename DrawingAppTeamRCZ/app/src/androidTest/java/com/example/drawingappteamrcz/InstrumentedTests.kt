@@ -17,6 +17,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.Assert.assertTrue
 
 class DrawingViewUiTest
 {
@@ -88,3 +89,4 @@ class DrawingDatabaseTest {
         assertEquals("edited strokes", drawings.single().drawingData)
     }
 }
+
