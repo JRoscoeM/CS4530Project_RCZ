@@ -30,12 +30,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import com.example.drawingappteamrcz.DrawingViewModel
-import com.example.drawingappteamrcz.drawing.SavedDrawing
+import androidx.compose.foundation.clickable
+import com.example.drawingappteamrcz.DrawingEntity
 
 @Composable
-fun DashboardView(myVM: DrawingViewModel, onNewDrawing: () -> Unit)
+fun DashboardView(myVM: DrawingViewModel,
+                  onNewDrawing: () -> Unit,
+                  onOpenDrawing: (DrawingEntity) -> Unit)
 {
-    val uiState by myVM.uiState.collectAsState()
+    val drawings by myVM.getDrawings().collectAsState(initial = emptyList())
     Box(
         Modifier
             .fillMaxSize()
@@ -47,7 +50,7 @@ fun DashboardView(myVM: DrawingViewModel, onNewDrawing: () -> Unit)
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)
             )
-            if (uiState.savedDrawings.isEmpty())
+            if (drawings.isEmpty())
             {
                 EmptyDrawingsMessage(Modifier.weight(1f))
             } else
@@ -59,7 +62,12 @@ fun DashboardView(myVM: DrawingViewModel, onNewDrawing: () -> Unit)
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    items(uiState.savedDrawings, key = { it.id }) { DrawingThumbnail(it) }
+                    items(drawings, key = { it.id }) { drawing ->
+                        DrawingThumbnail(
+                            drawing = drawing,
+                            onClick = { onOpenDrawing(drawing) }
+                        )
+                    }
                 }
             }
         }
@@ -92,44 +100,23 @@ private fun EmptyDrawingsMessage(modifier: Modifier)
 }
 
 @Composable
-private fun DrawingThumbnail(drawing: SavedDrawing)
-{
+private fun DrawingThumbnail(
+    drawing: DrawingEntity,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Canvas(
-            Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .background(Color.White)
-                .padding(8.dp)
-        ) {
-            val allPoints = drawing.strokes.flatMap { it.points }
-            if (allPoints.isEmpty()) return@Canvas
-            val minX = allPoints.minOf { it.x }
-            val maxX = allPoints.maxOf { it.x }
-            val minY = allPoints.minOf { it.y }
-            val maxY = allPoints.maxOf { it.y }
-            val sourceWidth = (maxX - minX).coerceAtLeast(1f)
-            val sourceHeight = (maxY - minY).coerceAtLeast(1f)
-            val scale = minOf(size.width / sourceWidth, size.height / sourceHeight) * 0.8f
-            val offsetX = (size.width - sourceWidth * scale) / 2f - minX * scale
-            val offsetY = (size.height - sourceHeight * scale) / 2f - minY * scale
-            drawing.strokes.forEach { stroke ->
-                stroke.points.zipWithNext().forEach { (start, end) ->
-                    drawLine(
-                        color = stroke.color,
-                        start = Offset(start.x * scale + offsetX, start.y * scale + offsetY),
-                        end = Offset(end.x * scale + offsetX, end.y * scale + offsetY),
-                        strokeWidth = (stroke.width * scale).coerceAtLeast(2.dp.toPx()),
-                        cap = StrokeCap.Round
-                    )
-                }
-            }
-        }
+        Text(
+            text = drawing.name,
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.titleMedium
+        )
     }
 }
 
