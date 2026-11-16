@@ -37,5 +37,8 @@ data class DrawingUiState(
     val selectedShape: BrushType = BrushType.DRAW,
     val selectedColor: Color = Color.Red,
     val strokes: List<Stroke> = emptyList(),
-    val currentStroke: List<DrawingPoint> = emptyList()
+    val currentStroke: List<DrawingPoint> = emptyList(),
+    // Vision API (temporary plain-text display)
+    val isDetecting: Boolean = false,
+    val visionResult: String? = null
 )

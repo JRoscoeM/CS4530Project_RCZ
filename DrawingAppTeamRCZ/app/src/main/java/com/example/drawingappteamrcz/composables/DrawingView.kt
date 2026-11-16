@@ -1,6 +1,18 @@
 package com.example.drawingappteamrcz.composables
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -105,6 +117,24 @@ fun DrawingView(
         uri?.let(vm::importDrawing)
     }
 
+    // Records the canvas (including its white background) so it can be sent to the Vision API
+    val canvasLayer = rememberGraphicsLayer()
+    val scope = rememberCoroutineScope()
+
+    // TEMPORARY: plain-text display of Vision results
+    uiState.visionResult?.let { result ->
+        AlertDialog(
+            onDismissRequest = vm::dismissVisionResult,
+            confirmButton = {
+                TextButton(onClick = vm::dismissVisionResult) { Text("OK") }
+            },
+            title = { Text("Detected objects") },
+            text = {
+                Text(result, modifier = Modifier.verticalScroll(rememberScrollState()))
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -184,7 +214,9 @@ fun DrawingView(
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -212,6 +244,19 @@ fun DrawingView(
             ) {
                 Text("Export")
             }
+            Button(
+                onClick = {
+                    scope.launch {
+                        // copy() converts a possible HARDWARE bitmap into one we can compress
+                        val bitmap = canvasLayer.toImageBitmap().asAndroidBitmap()
+                            .copy(Bitmap.Config.ARGB_8888, false)
+                        vm.detectObjects(bitmap)
+                    }
+                },
+                enabled = !uiState.isDetecting
+            ) {
+                Text(if (uiState.isDetecting) "Detecting…" else "Detect")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -220,6 +265,10 @@ fun DrawingView(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .drawWithContent {
+                    canvasLayer.record { this@drawWithContent.drawContent() }
+                    drawLayer(canvasLayer)
+                }
                 .background(Color.White)
                 .pointerInput(uiState.selectedShape) {
                     detectDragGestures(

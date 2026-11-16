@@ -2,6 +2,7 @@ package com.example.drawingappteamrcz
 
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -14,6 +15,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.drawingappteamrcz.HTTPClient.VisionService
 import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.DrawingPoint
 import com.example.drawingappteamrcz.drawing.DrawingUiState
@@ -30,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.IOException
+import kotlin.math.roundToInt
 
 // TODO type of Drawing
 @Serializable
@@ -67,6 +70,7 @@ private val drawingJson = Json {
 
 fun encodeDrawing(strokes: List<Stroke>): String
 {
+
     val storedStrokes = strokes.map { stroke ->
         StoredStroke(
             points = stroke.points.map { point ->
@@ -104,7 +108,8 @@ object DrawingViewModelProvider
                     as DrawingApplication
             DrawingViewModel(
                 repository = application.repository,
-                contentResolver = application.contentResolver
+                contentResolver = application.contentResolver,
+                visionService = application.visionService
             )
         }
     }
@@ -112,7 +117,8 @@ object DrawingViewModelProvider
 
 class DrawingViewModel(
     repository: Repository,
-    private val contentResolver: ContentResolver
+    private val contentResolver: ContentResolver,
+    private val visionService: VisionService
 ) : ViewModel()
 {
 
@@ -241,8 +247,10 @@ class DrawingViewModel(
         }
     }
 
-    fun loadDrawing(drawing: DrawingEntity) {
-        try {
+    fun loadDrawing(drawing: DrawingEntity)
+    {
+        try
+        {
             val storedStrokes =
                 drawingJson.decodeFromString<List<StoredStroke>>(drawing.drawingData)
 
@@ -265,16 +273,47 @@ class DrawingViewModel(
                 )
             }
             editingDrawingId = drawing.id
-        } catch (exception: Exception) {
+        } catch (exception: Exception)
+        {
             Log.e("DrawingLoad", "Unable to load drawing", exception)
         }
     }
 
-    fun setDrawingName(name: String) {
+    // ----------- Vision API ------------
+    fun detectObjects(bitmap: Bitmap)
+    {
+        if (_uiState.value.isDetecting) return
+        _uiState.update { it.copy(isDetecting = true) }
+
+        viewModelScope.launch {
+            val resultText = visionService.detectObjects(bitmap).fold(
+                onSuccess = { objects ->
+                    if (objects.isEmpty()) "No objects detected."
+                    else objects.joinToString("\n") { obj ->
+                        "${obj.name} — ${(obj.score * 100).roundToInt()}%"
+                    }
+                },
+                onFailure = { e ->
+                    Log.e(VISION_TAG, "Object detection failed", e)
+                    "Error: ${e.message}"
+                }
+            )
+            _uiState.update { it.copy(isDetecting = false, visionResult = resultText) }
+        }
+    }
+
+    fun dismissVisionResult()
+    {
+        _uiState.update { it.copy(visionResult = null) }
+    }
+
+    fun setDrawingName(name: String)
+    {
         _uiState.update { it.copy(drawingName = name) }
     }
 
-    fun saveDrawing() {
+    fun saveDrawing()
+    {
         val state = _uiState.value
         val drawing = DrawingEntity(
             name = state.drawingName,
@@ -283,9 +322,11 @@ class DrawingViewModel(
         )
 
         viewModelScope.launch {
-            if (editingDrawingId == null) {
+            if (editingDrawingId == null)
+            {
                 editingDrawingId = dao.addDrawing(drawing).toInt()
-            } else {
+            } else
+            {
                 dao.updateDrawing(drawing)
             }
         }
@@ -295,7 +336,8 @@ class DrawingViewModel(
     fun importDrawing(uri: Uri)
     {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
+            try
+            {
                 val importedDrawing = contentResolver.openInputStream(uri)
                     ?.bufferedReader()
                     ?.use { reader -> drawingJson.decodeFromString<StoredDrawing>(reader.readText()) }
@@ -316,15 +358,18 @@ class DrawingViewModel(
                     )
                 }
                 Log.i(IMPORT_TAG, "Drawing imported from $uri")
-            } catch (exception: Exception) {
+            } catch (exception: Exception)
+            {
                 Log.e(IMPORT_TAG, "Unable to import drawing", exception)
             }
         }
     }
+
     fun exportDrawing(name: String, strokes: List<Stroke>)
     {
         viewModelScope.launch(Dispatchers.IO) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
+            {
                 Log.w(EXPORT_TAG, "Export requires Android 10 or later")
                 return@launch
             }
@@ -353,13 +398,16 @@ class DrawingViewModel(
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
 
-            val exportUri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            if (exportUri == null) {
+            val exportUri =
+                contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            if (exportUri == null)
+            {
                 Log.e(EXPORT_TAG, "Unable to create MediaStore entry for $fileName")
                 return@launch
             }
 
-            try {
+            try
+            {
                 contentResolver.openOutputStream(exportUri, "w")?.bufferedWriter().use { writer ->
                     checkNotNull(writer) { "Unable to open MediaStore output stream" }
                     writer.write(exportJson)
@@ -371,7 +419,8 @@ class DrawingViewModel(
                     null
                 )
                 Log.i(EXPORT_TAG, "Drawing exported to $exportUri")
-            } catch (exception: Exception) {
+            } catch (exception: Exception)
+            {
                 contentResolver.delete(exportUri, null, null)
                 Log.e(EXPORT_TAG, "Unable to export drawing", exception)
             }
@@ -384,6 +433,7 @@ class DrawingViewModel(
         const val MAX_PEN_SIZE = 100f
         const val EXPORT_TAG = "DrawingExport"
         const val IMPORT_TAG = "DrawingImport"
+        const val VISION_TAG = "VisionDetect"
     }
 }
 

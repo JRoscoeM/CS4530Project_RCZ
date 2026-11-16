@@ -9,8 +9,11 @@ object Routing
     /** Trailing slash matters: relative paths below are resolved against this. */
     const val VISION_BASE_URL = "https://vision.googleapis.com/v1/"
 
-    /** POST — runs one or more features (e.g. OBJECT_LOCALIZATION) on a batch of images. */
-    const val ANNOTATE_IMAGES = "images:annotate"
+    /**
+     * POST — runs one or more features (e.g. OBJECT_LOCALIZATION) on a batch of images.
+     * Must be a full URL: a bare "images:annotate" is parsed as protocol "images" because of the colon.
+     */
+    const val ANNOTATE_IMAGES = "${VISION_BASE_URL}images:annotate"
 
     /** Google APIs accept the key as a header, which keeps it out of URLs and logs. */
     const val API_KEY_HEADER = "X-Goog-Api-Key"
