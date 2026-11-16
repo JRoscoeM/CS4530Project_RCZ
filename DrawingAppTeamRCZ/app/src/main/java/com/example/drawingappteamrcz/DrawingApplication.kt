@@ -2,6 +2,7 @@ package com.example.drawingappteamrcz
 
 import android.app.Application
 import androidx.room3.Room
+import com.example.drawingappteamrcz.HTTPClient.VisionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlin.getValue
@@ -18,5 +19,8 @@ class DrawingApplication : Application()
     }
     val repository by lazy {
         Repository(scope, database.drawingDao())
+    }
+    val visionService by lazy {
+        VisionService()
     }
 }
