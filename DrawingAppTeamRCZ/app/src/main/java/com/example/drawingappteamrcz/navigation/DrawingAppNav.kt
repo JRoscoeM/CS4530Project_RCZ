@@ -39,6 +39,15 @@ fun DrawingAppNav(
                 myNavController
             )
         }
+        composable("ai") {
+            DrawingRoute(
+                viewModel = myVM,
+                onFinished = {
+                    myNavController.popBackStack()
+                },
+                myNavController
+            )
+        }
         composable("splash") {
             SplashView {
                 myNavController.navigate("dashboard") {
