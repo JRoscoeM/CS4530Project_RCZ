@@ -1,5 +1,6 @@
 package com.example.drawingappteamrcz.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -8,6 +9,8 @@ import com.example.drawingappteamrcz.DrawingViewModel
 import com.example.drawingappteamrcz.composables.DashboardView
 import com.example.drawingappteamrcz.composables.SplashView
 import androidx.compose.ui.Modifier
+import com.example.drawingappteamrcz.composables.AIView
+import com.example.drawingappteamrcz.composables.AI_IMPORTED_DRAWING_URI_KEY
 import com.example.drawingappteamrcz.composables.DrawingRoute
 
 @Composable
@@ -40,12 +43,14 @@ fun DrawingAppNav(
             )
         }
         composable("ai") {
-            DrawingRoute(
-                viewModel = myVM,
-                onFinished = {
-                    myNavController.popBackStack()
-                },
-                myNavController
+            val drawingUri = myNavController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<String>(AI_IMPORTED_DRAWING_URI_KEY)
+                ?.let(Uri::parse)
+
+            AIView(
+                navController = myNavController,
+                drawingUri = drawingUri
             )
         }
         composable("splash") {

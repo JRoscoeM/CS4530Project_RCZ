@@ -57,6 +57,7 @@ val all_colors = mapOf(
 
 var startPosition: DrawingPoint? = null
 var endPosition: DrawingPoint? = null
+const val AI_IMPORTED_DRAWING_URI_KEY = "ai_imported_drawing_uri"
 
 @Composable
 fun DrawingRoute(viewModel: DrawingViewModel, onFinished: () -> Unit = {}, myNav: NavHostController)
@@ -102,7 +103,12 @@ fun DrawingView(
     val importDrawingLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let(vm::importDrawing)
+        uri?.let {
+            nav.currentBackStackEntry
+                ?.savedStateHandle
+                ?.set(AI_IMPORTED_DRAWING_URI_KEY, it.toString())
+            nav.navigate("ai")
+        }
     }
 
     Column(
