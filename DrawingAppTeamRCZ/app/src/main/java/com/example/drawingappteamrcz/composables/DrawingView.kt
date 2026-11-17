@@ -117,10 +117,7 @@ fun DrawingView(
     ) { uri ->
         uri?.let {
             vm.clearImportedImage()
-            nav.currentBackStackEntry
-                ?.savedStateHandle
-                ?.set(AI_IMPORTED_DRAWING_URI_KEY, it.toString())
-            nav.navigate("ai")
+            vm.importDrawing(it)
         }
     }
 
