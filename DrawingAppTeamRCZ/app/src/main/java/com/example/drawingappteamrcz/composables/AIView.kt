@@ -38,6 +38,10 @@ import com.example.drawingappteamrcz.DrawingViewModel
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import kotlin.math.min
 
 private sealed interface DrawingPreviewState {
     data object Empty : DrawingPreviewState
@@ -54,6 +58,9 @@ fun AIView(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val importedImage = uiState.importedImage
+    LaunchedEffect(importedImage) {
+        importedImage?.let(viewModel::detectObjects)
+    }
     val previewState by produceState<DrawingPreviewState>(
         initialValue = DrawingPreviewState.Empty,
         drawingUri
@@ -69,6 +76,19 @@ fun AIView(
                 }.getOrElse { DrawingPreviewState.Error }
             }
         } ?: DrawingPreviewState.Empty
+    }
+
+    uiState.visionResult?.let { result ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissVisionResult,
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissVisionResult) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Detected objects") },
+            text = { Text(result) }
+        )
     }
 
     Column(
@@ -93,12 +113,51 @@ fun AIView(
         ) {
             when {
                 importedImage != null -> {
-                    Image(
-                        bitmap = importedImage.asImageBitmap(),
-                        contentDescription = "Imported gallery image",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            bitmap = importedImage.asImageBitmap(),
+                            contentDescription = "Imported gallery image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val scale = min(
+                                size.width / importedImage.width.toFloat(),
+                                size.height / importedImage.height.toFloat()
+                            )
+
+                            val displayedWidth = importedImage.width * scale
+                            val displayedHeight = importedImage.height * scale
+                            val leftOffset = (size.width - displayedWidth) / 2f
+                            val topOffset = (size.height - displayedHeight) / 2f
+
+                            uiState.detectedObjects.forEach { detectedObject ->
+                                val vertices = detectedObject.boundingPoly.normalizedVertices
+
+                                if (vertices.isNotEmpty()) {
+                                    val xValues = vertices.map {
+                                        leftOffset + (it.x * displayedWidth)
+                                    }
+                                    val yValues = vertices.map {
+                                        topOffset + (it.y * displayedHeight)
+                                    }
+
+                                    val left = xValues.minOrNull() ?: 0f
+                                    val top = yValues.minOrNull() ?: 0f
+                                    val right = xValues.maxOrNull() ?: 0f
+                                    val bottom = yValues.maxOrNull() ?: 0f
+
+                                    drawRect(
+                                        color = Color.Red,
+                                        topLeft = Offset(left, top),
+                                        size = Size(right - left, bottom - top),
+                                        style = StrokeStyle(width = 4f)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 else -> {

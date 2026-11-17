@@ -2,6 +2,7 @@ package com.example.drawingappteamrcz.drawing
 
 import androidx.compose.ui.graphics.Color
 import android.graphics.Bitmap
+import com.example.drawingappteamrcz.HTTPClient.LocalizedObjectAnnotation
 
 data class DrawingPoint(
     val x: Float,
@@ -44,4 +45,5 @@ data class DrawingUiState(
     val visionResult: String? = null,
     val importedImage: Bitmap? = null,
     val imageImportError: String? = null,
+    val detectedObjects: List<LocalizedObjectAnnotation> = emptyList(),
 )

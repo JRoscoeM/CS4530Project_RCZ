@@ -287,19 +287,32 @@ class DrawingViewModel(
         _uiState.update { it.copy(isDetecting = true) }
 
         viewModelScope.launch {
-            val resultText = visionService.detectObjects(bitmap).fold(
+            visionService.detectObjects(bitmap).fold(
                 onSuccess = { objects ->
-                    if (objects.isEmpty()) "No objects detected."
-                    else objects.joinToString("\n") { obj ->
-                        "${obj.name} — ${(obj.score * 100).roundToInt()}%"
+                    _uiState.update {
+                        it.copy(
+                            isDetecting = false,
+                            detectedObjects = objects,
+                            visionResult = if (objects.isEmpty()) {
+                                "No objects detected."
+                            } else {
+                                objects.joinToString("\n") { obj ->
+                                    "${obj.name} — ${(obj.score * 100).roundToInt()}%"
+                                }
+                            }
+                        )
                     }
                 },
                 onFailure = { e ->
                     Log.e(VISION_TAG, "Object detection failed", e)
-                    "Error: ${e.message}"
+                    _uiState.update {
+                        it.copy(
+                            isDetecting = false,
+                            detectedObjects = emptyList(),
+                        )
+                    }
                 }
             )
-            _uiState.update { it.copy(isDetecting = false, visionResult = resultText) }
         }
     }
 
@@ -464,6 +477,8 @@ class DrawingViewModel(
             }
         }
     }
+
+
 
     private companion object
     {
