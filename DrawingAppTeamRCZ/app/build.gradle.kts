@@ -83,4 +83,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     ksp(libs.androidx.room3.compiler)
+
+    androidTestImplementation("io.ktor:ktor-client-mock:3.6.0")
 }
