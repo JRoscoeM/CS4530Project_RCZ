@@ -123,6 +123,12 @@ fun DrawingView(
         }
     }
 
+    val importImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let(vm::importImage)
+    }
+
     // Records the canvas (including its white background) so it can be sent to the Vision API
     val canvasLayer = rememberGraphicsLayer()
     val scope = rememberCoroutineScope()
@@ -249,6 +255,13 @@ fun DrawingView(
                 }
             ) {
                 Text("Export")
+            }
+            Button(
+                onClick = {
+                    importImageLauncher.launch("image/*")
+                }
+            ) {
+                Text("Import Image")
             }
             Button(
                 onClick = {

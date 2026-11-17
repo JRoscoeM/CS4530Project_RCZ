@@ -1,6 +1,7 @@
 package com.example.drawingappteamrcz.drawing
 
 import androidx.compose.ui.graphics.Color
+import android.graphics.Bitmap
 
 data class DrawingPoint(
     val x: Float,
@@ -40,5 +41,7 @@ data class DrawingUiState(
     val currentStroke: List<DrawingPoint> = emptyList(),
     // Vision API (temporary plain-text display)
     val isDetecting: Boolean = false,
-    val visionResult: String? = null
+    val visionResult: String? = null,
+    val importedImage: Bitmap? = null,
+    val imageImportError: String? = null,
 )

@@ -33,6 +33,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.IOException
 import kotlin.math.roundToInt
+import android.graphics.BitmapFactory
 
 // TODO type of Drawing
 @Serializable
@@ -361,6 +362,34 @@ class DrawingViewModel(
             } catch (exception: Exception)
             {
                 Log.e(IMPORT_TAG, "Unable to import drawing", exception)
+            }
+        }
+    }
+
+    fun importImage(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val bitmap = contentResolver.openInputStream(uri)
+                    ?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream)
+                    }
+                    ?: throw IOException("Unable to open selected image")
+
+                _uiState.update {
+                    it.copy(
+                        importedImage = bitmap,
+                        imageImportError = null
+                    )
+                }
+            } catch (exception: Exception) {
+                Log.e(IMPORT_TAG, "Unable to import image", exception)
+
+                _uiState.update {
+                    it.copy(
+                        importedImage = null,
+                        imageImportError = "Unable to import image."
+                    )
+                }
             }
         }
     }
