@@ -116,6 +116,7 @@ fun DrawingView(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
+            vm.clearImportedImage()
             nav.currentBackStackEntry
                 ?.savedStateHandle
                 ?.set(AI_IMPORTED_DRAWING_URI_KEY, it.toString())
@@ -126,7 +127,10 @@ fun DrawingView(
     val importImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        uri?.let(vm::importImage)
+        uri?.let {
+            vm.importImage(it)
+            nav.navigate("ai")
+        }
     }
 
     // Records the canvas (including its white background) so it can be sent to the Vision API

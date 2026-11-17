@@ -50,7 +50,8 @@ fun DrawingAppNav(
 
             AIView(
                 navController = myNavController,
-                drawingUri = drawingUri
+                drawingUri = drawingUri,
+                viewModel = myVM
             )
         }
         composable("splash") {

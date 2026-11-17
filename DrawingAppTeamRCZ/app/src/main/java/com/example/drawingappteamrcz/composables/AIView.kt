@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -33,6 +34,10 @@ import com.example.drawingappteamrcz.drawing.BrushType
 import com.example.drawingappteamrcz.drawing.Stroke
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.drawingappteamrcz.DrawingViewModel
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 
 private sealed interface DrawingPreviewState {
     data object Empty : DrawingPreviewState
@@ -43,9 +48,12 @@ private sealed interface DrawingPreviewState {
 @Composable
 fun AIView(
     navController: NavHostController,
-    drawingUri: Uri?
+    drawingUri: Uri?,
+    viewModel: DrawingViewModel
 ) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+    val importedImage = uiState.importedImage
     val previewState by produceState<DrawingPreviewState>(
         initialValue = DrawingPreviewState.Empty,
         drawingUri
@@ -83,17 +91,37 @@ fun AIView(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            when (val state = previewState) {
-                is DrawingPreviewState.Loaded -> DrawingPreview(strokes = state.strokes)
-                DrawingPreviewState.Empty -> Text(
-                    text = "No drawing selected",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            when {
+                importedImage != null -> {
+                    Image(
+                        bitmap = importedImage.asImageBitmap(),
+                        contentDescription = "Imported gallery image",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
 
-                DrawingPreviewState.Error -> Text(
-                    text = "Unable to load drawing",
-                    color = MaterialTheme.colorScheme.error
-                )
+                else -> {
+                    when (val state = previewState) {
+                        is DrawingPreviewState.Loaded -> {
+                            DrawingPreview(strokes = state.strokes)
+                        }
+
+                        DrawingPreviewState.Empty -> {
+                            Text(
+                                text = "No image selected",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        DrawingPreviewState.Error -> {
+                            Text(
+                                text = "Unable to load drawing",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
         }
     }

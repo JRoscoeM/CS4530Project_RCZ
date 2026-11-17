@@ -394,6 +394,15 @@ class DrawingViewModel(
         }
     }
 
+    fun clearImportedImage() {
+        _uiState.update {
+            it.copy(
+                importedImage = null,
+                imageImportError = null
+            )
+        }
+    }
+
     fun exportDrawing(name: String, strokes: List<Stroke>)
     {
         viewModelScope.launch(Dispatchers.IO) {
